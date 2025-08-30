@@ -118,16 +118,23 @@ serve(async (req) => {
     const generatedContent = aiResult.choices[0].message.content;
 
     // Parse posts from AI response using the specified format
-    console.log('AI Generated Content:', generatedContent);
+    console.log('AI Generated Content Length:', generatedContent.length);
+    console.log('AI Generated Content Preview:', generatedContent.substring(0, 500));
     
-    const posts = generatedContent
-      .split('=== POST')
-      .filter((post: string) => post.trim().length > 0)
-      .map((post: string) => {
-        // Remove the post number and === markers, clean up the content
-        return post.replace(/^\s*\d+\s*===\s*/, '').trim();
-      })
-      .filter((post: string) => post.length > 10); // Filter out very short posts
+    // Split by "=== POST" and process each part
+    const postParts = generatedContent.split(/=== POST \d+ ===/);
+    console.log('Split parts count:', postParts.length);
+    
+    // Filter out empty parts and process valid posts
+    const posts = postParts
+      .map((part: string) => part.trim())
+      .filter((part: string) => part.length > 20) // Filter out very short or empty parts
+      .map((part: string) => {
+        // Clean up any remaining formatting
+        return part.replace(/^=+\s*/, '').replace(/\s*=+$/, '').trim();
+      });
+    
+    console.log('Processed posts:', posts.map((p, i) => `Post ${i + 1}: ${p.substring(0, 100)}...`));
     
     console.log('Parsed posts count:', posts.length);
 
