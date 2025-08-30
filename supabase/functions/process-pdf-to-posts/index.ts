@@ -2,15 +2,34 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 
-// PDF parsing functionality using built-in browser APIs
+// PDF text extraction using pdf-parse library
 async function extractTextFromPDF(pdfBuffer: ArrayBuffer): Promise<string> {
   try {
-    // Simple text extraction - in a real implementation you'd use a proper PDF parser
-    // For now, we'll use a placeholder that indicates we're processing the actual PDF
-    return `PDF içeriği işlendi. Buffer boyutu: ${pdfBuffer.byteLength} bytes`;
+    // Import pdf-parse for text extraction
+    const { default: pdfParse } = await import('npm:pdf-parse@1.1.1');
+    
+    // Convert ArrayBuffer to Buffer for pdf-parse
+    const buffer = new Uint8Array(pdfBuffer);
+    
+    // Extract text using pdf-parse
+    const data = await pdfParse(buffer);
+    
+    console.log('PDF text extraction successful. Text length:', data.text.length);
+    console.log('PDF info:', {
+      pages: data.numpages,
+      info: data.info
+    });
+    
+    if (!data.text || data.text.trim().length === 0) {
+      // If no text extracted, try OCR approach
+      console.log('No text found in PDF, might be image-based PDF');
+      return 'PDF görsel tabanlı olabilir ve metin çıkarılamadı. Lütfen metin içeren bir PDF kullanın.';
+    }
+    
+    return data.text.trim();
   } catch (error) {
     console.error('PDF parsing error:', error);
-    throw new Error('PDF metni çıkarılamadı');
+    throw new Error('PDF metni çıkarılamadı: ' + error.message);
   }
 }
 
