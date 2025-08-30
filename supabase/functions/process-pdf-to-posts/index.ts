@@ -77,11 +77,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Sen bir sosyal medya uzmanısın ve içerik analiz uzmanısın. Verilen PDF içeriğini detaylı analiz ederek, konusal bütünlük gözetilerek farklı bölümlere ayır ve her bölüm için ayrı sosyal medya postları oluştur. Her post kendi başına anlamlı olmalı, engaging olmalı ve LinkedIn, Twitter, Instagram için uygun olmalı. Türkçe yazmalısın.'
+            content: 'Sen bir PDF okuma asistanısın. Amacın, okuyucunun okuma alışkanlığı kazanması ve PDF içeriğini kolayca takip edebilmesi için "post" formatına dönüştürmek. Kurallar: - Metnin kelimelerini değiştirme, olduğu gibi koru. - Metni sadece konu başlıklarına ve bütünlüğe göre parçalara ayır. - Her postun en başına, metne uygun olacak şekilde çok kısa bir giriş cümlesi ekle. - Her postun sonunda, metne uygun olarak en fazla 1–2 cümlelik ufak bir yorum ekleyebilirsin. - Postların sırası, PDF\'deki sıralamaya sadık kalsın. - Fazladan özet, ek bilgi ya da yorum yapma. Sadece giriş + metin + kısa kapanış kullan. - Nihai çıktı timeline akışında okunabilecek doğal postlar halinde olmalı.'
           },
           {
             role: 'user',
-            content: `PDF Başlığı: "${pdf.title}"\n\nPDF İçeriği (Gerçek PDF verisi - ${extractedText.length} karakter):\n${extractedText}\n\nBu PDF içeriğini analiz ederek:\n1. İçeriği mantıklı konulara böl\n2. Her konu için ayrı bir sosyal medya postu oluştur\n3. Her post bağımsız ve anlaşılır olmalı\n4. 4-8 adet post oluştur\n5. Her postu "=== POST [NUMARA] ===" ile ayır\n\nÖrnek format:\n=== POST 1 ===\n[Post içeriği]\n\n=== POST 2 ===\n[Post içeriği]`
+            content: `PDF Başlığı: "${pdf.title}"\n\nPDF İçeriği (Gerçek PDF verisi - ${extractedText.length} karakter):\n${extractedText}\n\nBu PDF içeriğini analiz ederek:\n1. Metni konu başlıklarına ve bütünlüğe göre parçalara ayır\n2. Her bölüm için ayrı bir post oluştur\n3. Kelimeleri değiştirme, metni olduğu gibi koru\n4. Her postun başına kısa giriş cümlesi ekle\n5. Her postun sonunda 1-2 cümlelik yorum ekle\n6. PDF sıralamasına sadık kal\n7. Her postu "=== POST [NUMARA] ===" ile ayır\n\nÖrnek format:\n=== POST 1 ===\n[Kısa giriş cümlesi]\n\n[Orijinal metin bölümü]\n\n[1-2 cümlelik yorum]\n\n=== POST 2 ===\n[Kısa giriş cümlesi]\n\n[Orijinal metin bölümü]\n\n[1-2 cümlelik yorum]`
           }
         ],
         max_tokens: 2000,
