@@ -111,16 +111,12 @@ export default function Timeline() {
       threshold: 0.1,
     });
 
-    // Extract title from content (first line)
-    const contentLines = post.content.split('\n').filter(line => line.trim());
-    const cardTitle = contentLines[0] || post.title;
-    const cardContent = contentLines.slice(1).join('\n').trim();
+    // Use full content as card content (no title extraction)
+    const cardContent = post.content.trim();
 
-    // Generate random image based on card content
+    // Generate random oil painting image
     const getRandomImageUrl = () => {
-      const keywords = ['nature', 'abstract', 'minimal', 'landscape', 'art', 'geometric', 'texture'];
-      const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
-      return `https://source.unsplash.com/800x600/?${randomKeyword}&sig=${post.id}`;
+      return `https://source.unsplash.com/800x600/?oil-painting,landscape,art&sig=${post.id}`;
     };
 
     return (
@@ -146,13 +142,10 @@ export default function Timeline() {
                     Kart {post.post_order}
                   </span>
                 </div>
-                <CardTitle className="text-xl leading-tight text-card-foreground group-hover:text-primary transition-colors">
-                  {cardTitle}
-                </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="prose prose-sm max-w-none text-card-foreground/80 mb-4">
-                  <p className="whitespace-pre-wrap leading-relaxed">
+                <div className="prose prose-base max-w-none text-card-foreground mb-4">
+                  <p className="whitespace-pre-wrap leading-relaxed text-base">
                     {cardContent}
                   </p>
                 </div>
@@ -187,7 +180,7 @@ export default function Timeline() {
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = `https://source.unsplash.com/800x600/?abstract&sig=${Math.random()}`;
+                  target.src = `https://source.unsplash.com/800x600/?oil-painting,art&sig=${Math.random()}`;
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-l from-transparent to-card/20" />
@@ -203,7 +196,7 @@ export default function Timeline() {
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = `https://source.unsplash.com/800x600/?abstract&sig=${Math.random()}`;
+                  target.src = `https://source.unsplash.com/800x600/?oil-painting,art&sig=${Math.random()}`;
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/30" />
@@ -221,13 +214,10 @@ export default function Timeline() {
                     Kart {post.post_order}
                   </span>
                 </div>
-                <CardTitle className="text-lg leading-tight text-card-foreground">
-                  {cardTitle}
-                </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="prose prose-sm max-w-none text-card-foreground/80 mb-4">
-                  <p className="whitespace-pre-wrap leading-relaxed text-sm">
+                <div className="prose prose-base max-w-none text-card-foreground mb-4">
+                  <p className="whitespace-pre-wrap leading-relaxed text-base">
                     {cardContent}
                   </p>
                 </div>

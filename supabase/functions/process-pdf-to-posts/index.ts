@@ -100,16 +100,15 @@ serve(async (req) => {
 
 Kurallar:
 - Metnin kelimelerini değiştirme, olduğu gibi koru.
-- Metni konu başlıklarına ve bütünlüğe göre parçalara ayır.
-- Her kartın en üstünde tespit edilen konu başlığını ver.
-- Başlığın altında, ilgili metni ekle.
+- Metni konusuna ve bütünlüğe göre anlamlı parçalara ayır.
+- Her kartta sadece ilgili metin yer alsın, başlık ekleme.
 - Fazladan özet, yorum ya da giriş/kapanış ekleme.
 - Kartların sırası PDF'deki sıralamaya sadık kalsın.
 - Nihai çıktı: "=== KART [NUMARA] ===" formatıyla ayrılmış okuma kartları.`
           },
           {
             role: 'user',
-            content: `PDF Başlığı: "${pdf.title}"\n\nPDF İçeriği (Gerçek PDF verisi - ${extractedText.length} karakter):\n${extractedText}\n\nBu PDF içeriğini analiz ederek:\n1. Metni konu başlıklarına ve bütünlüğe göre parçalara ayır\n2. Her bölüm için bir "okuma kartı" oluştur\n3. Her kartta başlık + metin yer alsın\n4. Kelimeleri değiştirme\n5. PDF sıralamasına sadık kal\n6. Her kartı "=== KART [NUMARA] ===" ile ayır\n\nÖrnek format:\n=== KART 1 ===\n[Konu başlığı]\n\n[Orijinal metin bölümü]\n\n=== KART 2 ===\n[Konu başlığı]\n\n[Orijinal metin bölümü]`
+            content: `PDF Başlığı: "${pdf.title}"\n\nPDF İçeriği (Gerçek PDF verisi - ${extractedText.length} karakter):\n${extractedText}\n\nBu PDF içeriğini analiz ederek:\n1. Metni konusuna ve bütünlüğe göre anlamlı parçalara ayır\n2. Her bölüm için bir "okuma kartı" oluştur\n3. Her kartta sadece metin yer alsın, başlık ekleme\n4. Kelimeleri değiştirme\n5. PDF sıralamasına sadık kal\n6. Her kartı "=== KART [NUMARA] ===" ile ayır\n\nÖrnek format:\n=== KART 1 ===\n[Orijinal metin bölümü]\n\n=== KART 2 ===\n[Orijinal metin bölümü]`
           }
         ],
         max_tokens: 2000,
