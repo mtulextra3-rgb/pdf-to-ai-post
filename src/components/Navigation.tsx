@@ -2,12 +2,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Clock, LogOut, Upload } from 'lucide-react';
+import { FileText, Clock, LogOut, Upload, FolderOpen, Sun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 
 export const Navigation = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -16,6 +18,10 @@ export const Navigation = () => {
     } else {
       toast.success('Başarıyla çıkış yapıldı');
     }
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   if (!user) return null;
@@ -43,6 +49,16 @@ export const Navigation = () => {
                 </Button>
               </Link>
               
+              <Link to="/pdfs">
+                <Button 
+                  variant={location.pathname === '/pdfs' ? 'default' : 'ghost'}
+                  className="flex items-center space-x-2"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  <span>PDF'ler</span>
+                </Button>
+              </Link>
+              
               <Link to="/timeline">
                 <Button 
                   variant={location.pathname === '/timeline' ? 'default' : 'ghost'}
@@ -56,6 +72,9 @@ export const Navigation = () => {
           </div>
 
           <div className="flex items-center space-x-4">
+            <Button onClick={toggleTheme} variant="ghost" size="sm">
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             <span className="text-sm text-muted-foreground">
               {user.email}
             </span>

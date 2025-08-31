@@ -96,11 +96,20 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Sen bir PDF okuma asistanısın. Amacın, okuyucunun okuma alışkanlığı kazanması ve PDF içeriğini kolayca takip edebilmesi için "post" formatına dönüştürmek. Kurallar: - Metnin kelimelerini değiştirme, olduğu gibi koru. - Metni sadece konu başlıklarına ve bütünlüğe göre parçalara ayır. - Her postun en başına, metne uygun olacak şekilde çok kısa bir giriş cümlesi ekle. - Her postun sonunda, metne uygun olarak en fazla 1–2 cümlelik ufak bir yorum ekleyebilirsin. - Postların sırası, PDF\'deki sıralamaya sadık kalsın. - Fazladan özet, ek bilgi ya da yorum yapma. Sadece giriş + metin + kısa kapanış kullan. - Nihai çıktı timeline akışında okunabilecek doğal postlar halinde olmalı.'
+            content: `Sen bir PDF okuma asistanısın. Amacın, okuyucunun okuma alışkanlığı kazanması ve PDF içeriğini kolayca takip edebilmesi için "okuma kartları" oluşturmak. 
+
+Kurallar:
+- Metnin kelimelerini değiştirme, olduğu gibi koru.
+- Metni konu başlıklarına ve bütünlüğe göre parçalara ayır.
+- Her kartın en üstünde tespit edilen konu başlığını ver.
+- Başlığın altında, ilgili metni ekle.
+- Fazladan özet, yorum ya da giriş/kapanış ekleme.
+- Kartların sırası PDF'deki sıralamaya sadık kalsın.
+- Nihai çıktı: "=== KART [NUMARA] ===" formatıyla ayrılmış okuma kartları.`
           },
           {
             role: 'user',
-            content: `PDF Başlığı: "${pdf.title}"\n\nPDF İçeriği (Gerçek PDF verisi - ${extractedText.length} karakter):\n${extractedText}\n\nBu PDF içeriğini analiz ederek:\n1. Metni konu başlıklarına ve bütünlüğe göre parçalara ayır\n2. Her bölüm için ayrı bir post oluştur\n3. Kelimeleri değiştirme, metni olduğu gibi koru\n4. Her postun başına kısa giriş cümlesi ekle\n5. Her postun sonunda 1-2 cümlelik yorum ekle\n6. PDF sıralamasına sadık kal\n7. Her postu "=== POST [NUMARA] ===" ile ayır\n\nÖrnek format:\n=== POST 1 ===\n[Kısa giriş cümlesi]\n\n[Orijinal metin bölümü]\n\n[1-2 cümlelik yorum]\n\n=== POST 2 ===\n[Kısa giriş cümlesi]\n\n[Orijinal metin bölümü]\n\n[1-2 cümlelik yorum]`
+            content: `PDF Başlığı: "${pdf.title}"\n\nPDF İçeriği (Gerçek PDF verisi - ${extractedText.length} karakter):\n${extractedText}\n\nBu PDF içeriğini analiz ederek:\n1. Metni konu başlıklarına ve bütünlüğe göre parçalara ayır\n2. Her bölüm için bir "okuma kartı" oluştur\n3. Her kartta başlık + metin yer alsın\n4. Kelimeleri değiştirme\n5. PDF sıralamasına sadık kal\n6. Her kartı "=== KART [NUMARA] ===" ile ayır\n\nÖrnek format:\n=== KART 1 ===\n[Konu başlığı]\n\n[Orijinal metin bölümü]\n\n=== KART 2 ===\n[Konu başlığı]\n\n[Orijinal metin bölümü]`
           }
         ],
         max_tokens: 2000,
@@ -121,12 +130,12 @@ serve(async (req) => {
     console.log('AI Generated Content Length:', generatedContent.length);
     console.log('AI Generated Content Preview:', generatedContent.substring(0, 500));
     
-    // Split by "=== POST" and process each part
-    const postParts = generatedContent.split(/=== POST \d+ ===/);
-    console.log('Split parts count:', postParts.length);
+    // Split by "=== KART" and process each part
+    const cardParts = generatedContent.split(/=== KART \d+ ===/);
+    console.log('Split parts count:', cardParts.length);
     
-    // Filter out empty parts and process valid posts
-    const posts = postParts
+    // Filter out empty parts and process valid cards
+    const posts = cardParts
       .map((part: string) => part.trim())
       .filter((part: string) => part.length > 20) // Filter out very short or empty parts
       .map((part: string) => {
@@ -134,20 +143,21 @@ serve(async (req) => {
         return part.replace(/^=+\s*/, '').replace(/\s*=+$/, '').trim();
       });
     
-    console.log('Processed posts:', posts.map((p, i) => `Post ${i + 1}: ${p.substring(0, 100)}...`));
+    console.log('Processed cards:', posts.map((p, i) => `Card ${i + 1}: ${p.substring(0, 100)}...`));
     
     console.log('Parsed posts count:', posts.length);
 
-    // Save posts to database
+    // Save reading cards to database
     const postsToInsert = posts.map((content: string, index: number) => ({
       user_id: pdf.user_id,
       pdf_id: pdfId,
-      title: `${pdf.title} - Post ${index + 1}`,
+      title: `${pdf.title} - Kart ${index + 1}`,
       content: content.trim(),
       post_order: index + 1,
       metadata: {
         source_pdf: pdf.title,
-        generated_at: new Date().toISOString()
+        generated_at: new Date().toISOString(),
+        type: 'reading_card'
       }
     }));
 
@@ -174,7 +184,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         postsCreated: posts.length,
-        message: 'PDF successfully processed into social media posts' 
+        message: 'PDF successfully processed into reading cards' 
       }),
       { 
         headers: { 
