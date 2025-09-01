@@ -114,10 +114,13 @@ export default function Timeline() {
     // Use full content as card content (no title extraction)
     const cardContent = post.content.trim();
 
-    // Generate random oil painting image
+    // Generate random floral oil painting image
     const getRandomImageUrl = () => {
-      return `https://source.unsplash.com/800x600/?oil-painting,landscape,art&sig=${post.id}`;
+      return `https://source.unsplash.com/800x600/?oil-painting,flowers,floral,art&sig=${post.id}`;
     };
+
+    // Determine if text is short (less than 300 characters)
+    const isShortText = cardContent.length < 300;
 
     return (
       <div
@@ -127,64 +130,129 @@ export default function Timeline() {
         }`}
       >
         <Card className="bg-card shadow-elegant border-border hover:shadow-glow transition-all duration-300 overflow-hidden group">
-          {/* Desktop Layout - Horizontal */}
-          <div className="hidden md:flex">
-            <div className="flex-1 p-6">
-              <CardHeader className="p-0 mb-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="h-5 w-5 text-primary" />
-                    <span className="text-sm text-muted-foreground">
-                      {post.pdf_title}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                    Kart {post.post_order}
-                  </span>
+          {/* Desktop Layout - Adaptive based on text length */}
+          <div className="hidden md:block">
+            {isShortText ? (
+              // Short text: Image on top, text below
+              <div>
+                <div className="relative h-48 overflow-hidden">
+                  <img 
+                    src={getRandomImageUrl()}
+                    alt="Floral oil painting illustration"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/30" />
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="prose prose-base max-w-none text-card-foreground mb-4">
-                  <p className="whitespace-pre-wrap leading-relaxed text-base">
-                    {cardContent}
-                  </p>
+                <div className="p-6">
+                  <CardHeader className="p-0 mb-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center space-x-2">
+                        <BookOpen className="h-5 w-5 text-primary" />
+                        <span className="text-sm text-muted-foreground">
+                          {post.pdf_title}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                        Kart {post.post_order}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="prose prose-lg max-w-none text-card-foreground mb-4">
+                      <p className="whitespace-pre-wrap leading-relaxed text-lg">
+                        {cardContent}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(post.created_at)}
+                      </span>
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => handleCopyPost(post.content)}
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(post.created_at)}
-                  </span>
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => handleCopyPost(post.content)}
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+              </div>
+            ) : (
+              // Long text: Horizontal layout with image on right
+              <div className="flex">
+                <div className="flex-1 p-6">
+                  <CardHeader className="p-0 mb-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center space-x-2">
+                        <BookOpen className="h-5 w-5 text-primary" />
+                        <span className="text-sm text-muted-foreground">
+                          {post.pdf_title}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                        Kart {post.post_order}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="prose prose-lg max-w-none text-card-foreground mb-4">
+                      <p className="whitespace-pre-wrap leading-relaxed text-lg">
+                        {cardContent}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(post.created_at)}
+                      </span>
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => handleCopyPost(post.content)}
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
                 </div>
-              </CardContent>
-            </div>
-            <div className="w-80 relative overflow-hidden">
-              <img 
-                src={getRandomImageUrl()}
-                alt="Reading card illustration"
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://source.unsplash.com/800x600/?oil-painting,art&sig=${Math.random()}`;
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-l from-transparent to-card/20" />
-            </div>
+                <div className="w-80 relative overflow-hidden">
+                  <img 
+                    src={getRandomImageUrl()}
+                    alt="Floral oil painting illustration"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-l from-transparent to-card/20" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Mobile Layout - Vertical */}
@@ -192,11 +260,11 @@ export default function Timeline() {
             <div className="relative h-48 overflow-hidden">
               <img 
                 src={getRandomImageUrl()}
-                alt="Reading card illustration"
+                alt="Floral oil painting illustration"
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = `https://source.unsplash.com/800x600/?oil-painting,art&sig=${Math.random()}`;
+                  target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/30" />
@@ -216,8 +284,8 @@ export default function Timeline() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="prose prose-base max-w-none text-card-foreground mb-4">
-                  <p className="whitespace-pre-wrap leading-relaxed text-base">
+                <div className="prose prose-lg max-w-none text-card-foreground mb-4">
+                  <p className="whitespace-pre-wrap leading-relaxed text-lg">
                     {cardContent}
                   </p>
                 </div>
