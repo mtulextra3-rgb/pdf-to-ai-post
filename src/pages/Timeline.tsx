@@ -114,11 +114,24 @@ export default function Timeline() {
     // Use full content as card content (no title extraction)
     const cardContent = post.content.trim();
 
-    // Generate random floral oil painting image
+    // Generate unique floral oil painting image from Unsplash
     const getRandomImageUrl = () => {
-      return `https://source.unsplash.com/800x600/?oil-painting,flowers,floral,art&sig=${post.id}`;
+      const seed = post.id.substring(0, 8); // Use part of post ID as seed for consistency
+      return `https://source.unsplash.com/800x600/?flower,oil-painting,art&sig=${seed}`;
     };
 
+    // Get random position for image (top, right, left)
+    const getRandomPosition = () => {
+      const positions = ['top', 'right', 'left'];
+      const hash = post.id.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return positions[Math.abs(hash) % positions.length];
+    };
+
+    const imagePosition = getRandomPosition();
+    
     // Determine if text is short (less than 400 characters)
     const isShortText = cardContent.length < 400;
 
@@ -133,9 +146,16 @@ export default function Timeline() {
           {/* Desktop Layout - Adaptive based on text length */}
           <div className="hidden md:block">
             {isShortText ? (
-              // Short text: Image on top, text below
-              <div>
-                <div className="relative h-48 overflow-hidden">
+              // Short text: Random positioned image with text
+              <div className={`${
+                imagePosition === 'top' ? 'flex flex-col' :
+                imagePosition === 'right' ? 'flex flex-row-reverse' :
+                'flex flex-row'
+              }`}>
+                <div className={`relative overflow-hidden ${
+                  imagePosition === 'top' ? 'h-48 w-full' :
+                  'h-64 w-64 flex-shrink-0'
+                }`}>
                   <img 
                     src={getRandomImageUrl()}
                     alt="Floral oil painting illustration"
@@ -147,7 +167,7 @@ export default function Timeline() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/30" />
                 </div>
-                <div className="p-6">
+                <div className="p-6 flex-1">
                   <CardHeader className="p-0 mb-4">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center space-x-2">
