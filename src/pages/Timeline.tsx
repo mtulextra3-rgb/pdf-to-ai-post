@@ -110,16 +110,48 @@ export default function Timeline() {
       triggerOnce: true,
       threshold: 0.1,
     });
+    
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [imageLoading, setImageLoading] = useState(true);
 
     // Use full content as card content (no title extraction)
     const cardContent = post.content.trim();
 
-    // Generate unique image from specified Unsplash collection
-    const getRandomImageUrl = () => {
-      const collectionId = 'YUJj5hPgZfg'; // User's specified collection
-      const seed = post.id.substring(0, 8); // Use part of post ID as seed for consistency
-      return `https://source.unsplash.com/collection/${collectionId}/800x600/?sig=${seed}`;
+    // Generate unique image from specified Unsplash collection using Edge Function
+    const getRandomImageUrl = async () => {
+      try {
+        const collectionId = 'YUJj5hPgZfg'; // User's specified collection
+        const seed = post.id.substring(0, 8); // Use part of post ID as seed for consistency
+        
+        const response = await supabase.functions.invoke('get-unsplash-image', {
+          body: { collectionId, seed }
+        });
+
+        if (response.error) {
+          console.error('Edge function error:', response.error);
+          return null;
+        }
+
+        return response.data?.urls?.regular || null;
+      } catch (error) {
+        console.error('Error fetching Unsplash image:', error);
+        return null;
+      }
     };
+
+    // Load image when component mounts
+    useEffect(() => {
+      const loadImage = async () => {
+        setImageLoading(true);
+        const url = await getRandomImageUrl();
+        setImageUrl(url);
+        setImageLoading(false);
+      };
+      
+      if (inView && !imageUrl) {
+        loadImage();
+      }
+    }, [inView, post.id]);
 
     // Get random position for image (top, right, left)
     const getRandomPosition = () => {
@@ -157,15 +189,25 @@ export default function Timeline() {
                   imagePosition === 'top' ? 'h-48 w-full' :
                   'h-64 w-64 flex-shrink-0'
                 }`}>
-                  <img 
-                    src={getRandomImageUrl()}
-                    alt="Floral oil painting illustration"
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
-                    }}
-                  />
+                  {imageLoading ? (
+                    <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center">
+                      <span className="text-muted-foreground text-sm">Yükleniyor...</span>
+                    </div>
+                  ) : imageUrl ? (
+                    <img 
+                      src={imageUrl}
+                      alt="Floral oil painting illustration"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <span className="text-muted-foreground text-sm">Resim yüklenemedi</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/30" />
                 </div>
                 <div className="p-6 flex-1">
@@ -266,15 +308,25 @@ export default function Timeline() {
           <div className="md:hidden">
             {isShortText && (
               <div className="relative h-48 overflow-hidden">
-                <img 
-                  src={getRandomImageUrl()}
-                  alt="Floral oil painting illustration"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
-                  }}
-                />
+                {imageLoading ? (
+                  <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center">
+                    <span className="text-muted-foreground text-sm">Yükleniyor...</span>
+                  </div>
+                ) : imageUrl ? (
+                  <img 
+                    src={imageUrl}
+                    alt="Floral oil painting illustration"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <span className="text-muted-foreground text-sm">Resim yüklenemedi</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/30" />
               </div>
             )}
