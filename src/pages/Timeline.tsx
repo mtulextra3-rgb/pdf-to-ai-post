@@ -114,10 +114,11 @@ export default function Timeline() {
     // Use full content as card content (no title extraction)
     const cardContent = post.content.trim();
 
-    // Generate unique floral oil painting image from Unsplash
+    // Generate unique image from specified Unsplash collection
     const getRandomImageUrl = () => {
+      const collectionId = 'YUJj5hPgZfg'; // User's specified collection
       const seed = post.id.substring(0, 8); // Use part of post ID as seed for consistency
-      return `https://source.unsplash.com/800x600/?flower,oil-painting,art&sig=${seed}`;
+      return `https://source.unsplash.com/collection/${collectionId}/800x600/?sig=${seed}`;
     };
 
     // Get random position for image (top, right, left)
