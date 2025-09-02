@@ -123,19 +123,26 @@ export default function Timeline() {
         const collectionId = 'YUJj5hPgZfg'; // User's specified collection
         const seed = post.id.substring(0, 8); // Use part of post ID as seed for consistency
         
+        console.log('Attempting to fetch image from Unsplash collection:', collectionId);
+        
         const response = await supabase.functions.invoke('get-unsplash-image', {
           body: { collectionId, seed }
         });
 
+        console.log('Edge function response:', response);
+
         if (response.error) {
           console.error('Edge function error:', response.error);
-          return null;
+          // Fallback to direct Unsplash collection URL
+          return `https://source.unsplash.com/800x600/?sig=${seed}&collection=${collectionId}`;
         }
 
-        return response.data?.urls?.regular || null;
+        return response.data?.urls?.regular || `https://source.unsplash.com/800x600/?sig=${seed}&collection=${collectionId}`;
       } catch (error) {
         console.error('Error fetching Unsplash image:', error);
-        return null;
+        // Fallback to direct Unsplash collection URL
+        const seed = post.id.substring(0, 8);
+        return `https://source.unsplash.com/800x600/?sig=${seed}&collection=YUJj5hPgZfg`;
       }
     };
 
@@ -199,8 +206,10 @@ export default function Timeline() {
                       alt="Floral oil painting illustration"
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       onError={(e) => {
+                        console.error('Image loading failed, trying fallback');
                         const target = e.target as HTMLImageElement;
-                        target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
+                        const fallbackSeed = Math.random().toString(36).substring(7);
+                        target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${fallbackSeed}`;
                       }}
                     />
                   ) : (
@@ -318,8 +327,10 @@ export default function Timeline() {
                     alt="Floral oil painting illustration"
                     className="w-full h-full object-cover"
                     onError={(e) => {
+                      console.error('Mobile image loading failed, trying fallback');
                       const target = e.target as HTMLImageElement;
-                      target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${Math.random()}`;
+                      const fallbackSeed = Math.random().toString(36).substring(7);
+                      target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${fallbackSeed}`;
                     }}
                   />
                 ) : (
