@@ -129,9 +129,70 @@ export default function Timeline() {
     };
 
     const imagePosition = getRandomPosition();
-    
-    // Determine if text is short (less than 400 characters)
-    const isShortText = cardContent.length < 400;
+
+    const renderCardHeader = () => (
+      <div className="mb-4">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-center space-x-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <span className="text-sm text-muted-foreground">
+              {post.pdf_title}
+            </span>
+          </div>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+            Kart {post.post_order}
+          </span>
+        </div>
+      </div>
+    );
+
+    const renderCardContent = () => (
+      <div className="prose prose-xl max-w-none text-card-foreground mb-4">
+        <p className="whitespace-pre-wrap leading-relaxed text-xl">
+          {cardContent}
+        </p>
+      </div>
+    );
+
+    const renderCardActions = () => (
+      <div className="flex justify-between items-center">
+        <span className="text-xs text-muted-foreground">
+          {formatDate(post.created_at)}
+        </span>
+        <div className="flex space-x-2">
+          <Button
+            onClick={() => handleCopyPost(post.content)}
+            variant="ghost"
+            size="sm"
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+
+    const renderImage = (className: string) => (
+      <div className={`overflow-hidden ${className}`}>
+        <img 
+          src={imageUrl}
+          alt="Reading card illustration"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={(e) => {
+            console.error('Image loading failed');
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+          }}
+        />
+      </div>
+    );
 
     return (
       <div
@@ -141,126 +202,61 @@ export default function Timeline() {
         }`}
       >
         <Card className="bg-card shadow-elegant border-border hover:shadow-glow transition-all duration-300 overflow-hidden group">
-          {/* Desktop Layout - Always show image with larger size */}
+          {/* Desktop Layout */}
           <div className="hidden md:block">
-            {imageUrl && (
-              <div className="relative h-80 overflow-hidden">
-                <img 
-                  src={imageUrl}
-                  alt="Reading card illustration"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  onError={(e) => {
-                    console.error('Image loading failed');
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card/90" />
-                {/* Overlay content */}
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <BookOpen className="h-4 w-4 text-white" />
-                    <span className="text-sm text-white/90">
-                      {post.pdf_title}
-                    </span>
-                    <span className="ml-auto text-xs text-white/80 bg-white/20 px-2 py-1 rounded-full">
-                      Kart {post.post_order}
-                    </span>
+            {imageUrl ? (
+              <>
+                {imagePosition === 'top' && (
+                  <>
+                    {renderImage("h-80")}
+                    <div className="p-6">
+                      {renderCardHeader()}
+                      {renderCardContent()}
+                      {renderCardActions()}
+                    </div>
+                  </>
+                )}
+                
+                {imagePosition === 'left' && (
+                  <div className="flex">
+                    {renderImage("w-80 h-96")}
+                    <div className="flex-1 p-6 flex flex-col">
+                      {renderCardHeader()}
+                      <div className="flex-1">
+                        {renderCardContent()}
+                      </div>
+                      {renderCardActions()}
+                    </div>
                   </div>
-                </div>
+                )}
+                
+                {imagePosition === 'right' && (
+                  <div className="flex">
+                    <div className="flex-1 p-6 flex flex-col">
+                      {renderCardHeader()}
+                      <div className="flex-1">
+                        {renderCardContent()}
+                      </div>
+                      {renderCardActions()}
+                    </div>
+                    {renderImage("w-80 h-96")}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-6">
+                {renderCardHeader()}
+                {renderCardContent()}
+                {renderCardActions()}
               </div>
             )}
-            <div className="p-6">
-              {!imageUrl && (
-                <div className="mb-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center space-x-2">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                      <span className="text-sm text-muted-foreground">
-                        {post.pdf_title}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                      Kart {post.post_order}
-                    </span>
-                  </div>
-                </div>
-              )}
-              <div className="prose prose-xl max-w-none text-card-foreground mb-4">
-                <p className="whitespace-pre-wrap leading-relaxed text-xl">
-                  {cardContent}
-                </p>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(post.created_at)}
-                </span>
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={() => handleCopyPost(post.content)}
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Mobile Layout - Always show image if available */}
+          {/* Mobile Layout - Always top position */}
           <div className="md:hidden">
-            {imageUrl && (
-              <div className="relative h-60 overflow-hidden">
-                <img 
-                  src={imageUrl}
-                  alt="Reading card illustration"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    console.error('Mobile image loading failed');
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card/90" />
-                {/* Mobile overlay content */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <BookOpen className="h-4 w-4 text-white" />
-                    <span className="text-xs text-white/90">
-                      {post.pdf_title}
-                    </span>
-                    <span className="ml-auto text-xs text-white/80 bg-white/20 px-2 py-1 rounded-full">
-                      Kart {post.post_order}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+            {imageUrl && renderImage("h-60")}
             <div className="p-6">
-              {!imageUrl && (
-                <div className="mb-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center space-x-2">
-                      <BookOpen className="h-4 w-4 text-primary" />
-                      <span className="text-xs text-muted-foreground">
-                        {post.pdf_title}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                      Kart {post.post_order}
-                    </span>
-                  </div>
-                </div>
-              )}
+              {!imageUrl && renderCardHeader()}
               <div className="prose prose-xl max-w-none text-card-foreground mb-4">
                 <p className="whitespace-pre-wrap leading-relaxed text-lg">
                   {cardContent}
