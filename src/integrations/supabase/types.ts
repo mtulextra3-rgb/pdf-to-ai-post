@@ -58,6 +58,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
           metadata: Json | null
           pdf_id: string
           post_order: number | null
@@ -69,6 +70,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
           metadata?: Json | null
           pdf_id: string
           post_order?: number | null
@@ -80,6 +82,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           metadata?: Json | null
           pdf_id?: string
           post_order?: number | null

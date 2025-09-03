@@ -15,6 +15,7 @@ interface Post {
   content: string;
   post_order: number;
   created_at: string;
+  image_url?: string;
   pdf_title?: string;
   pdfs?: {
     title: string;
@@ -110,55 +111,12 @@ export default function Timeline() {
       triggerOnce: true,
       threshold: 0.1,
     });
-    
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
-    const [imageLoading, setImageLoading] = useState(true);
 
-    // Use full content as card content (no title extraction)
+    // Use full content as card content
     const cardContent = post.content.trim();
-
-    // Generate unique image from specified Unsplash collection using Edge Function
-    const getRandomImageUrl = async () => {
-      try {
-        const collectionId = 'YUJj5hPgZfg'; // User's specified collection
-        const seed = post.id.substring(0, 8); // Use part of post ID as seed for consistency
-        
-        console.log('Attempting to fetch image from Unsplash collection:', collectionId);
-        
-        const response = await supabase.functions.invoke('get-unsplash-image', {
-          body: { collectionId, seed }
-        });
-
-        console.log('Edge function response:', response);
-
-        if (response.error) {
-          console.error('Edge function error:', response.error);
-          // Fallback to direct Unsplash collection URL
-          return `https://source.unsplash.com/800x600/?sig=${seed}&collection=${collectionId}`;
-        }
-
-        return response.data?.urls?.regular || `https://source.unsplash.com/800x600/?sig=${seed}&collection=${collectionId}`;
-      } catch (error) {
-        console.error('Error fetching Unsplash image:', error);
-        // Fallback to direct Unsplash collection URL
-        const seed = post.id.substring(0, 8);
-        return `https://source.unsplash.com/800x600/?sig=${seed}&collection=YUJj5hPgZfg`;
-      }
-    };
-
-    // Load image when component mounts
-    useEffect(() => {
-      const loadImage = async () => {
-        setImageLoading(true);
-        const url = await getRandomImageUrl();
-        setImageUrl(url);
-        setImageLoading(false);
-      };
-      
-      if (inView && !imageUrl) {
-        loadImage();
-      }
-    }, [inView, post.id]);
+    
+    // Use the image URL from database if available
+    const imageUrl = post.image_url;
 
     // Get random position for image (top, right, left)
     const getRandomPosition = () => {
@@ -183,205 +141,151 @@ export default function Timeline() {
         }`}
       >
         <Card className="bg-card shadow-elegant border-border hover:shadow-glow transition-all duration-300 overflow-hidden group">
-          {/* Desktop Layout - Adaptive based on text length */}
+          {/* Desktop Layout - Always show image with larger size */}
           <div className="hidden md:block">
-            {isShortText ? (
-              // Short text: Random positioned image with text
-              <div className={`${
-                imagePosition === 'top' ? 'flex flex-col' :
-                imagePosition === 'right' ? 'flex flex-row-reverse' :
-                'flex flex-row'
-              }`}>
-                <div className={`relative overflow-hidden ${
-                  imagePosition === 'top' ? 'h-48 w-full' :
-                  'h-64 w-64 flex-shrink-0'
-                }`}>
-                  {imageLoading ? (
-                    <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center">
-                      <span className="text-muted-foreground text-sm">Yükleniyor...</span>
-                    </div>
-                  ) : imageUrl ? (
-                    <img 
-                      src={imageUrl}
-                      alt="Floral oil painting illustration"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      onError={(e) => {
-                        console.error('Image loading failed, trying fallback');
-                        const target = e.target as HTMLImageElement;
-                        const fallbackSeed = Math.random().toString(36).substring(7);
-                        target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${fallbackSeed}`;
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                      <span className="text-muted-foreground text-sm">Resim yüklenemedi</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/30" />
-                </div>
-                <div className="p-6 flex-1">
-                  <CardHeader className="p-0 mb-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center space-x-2">
-                        <BookOpen className="h-5 w-5 text-primary" />
-                        <span className="text-sm text-muted-foreground">
-                          {post.pdf_title}
-                        </span>
-                      </div>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                        Kart {post.post_order}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="prose prose-xl max-w-none text-card-foreground mb-4">
-                      <p className="whitespace-pre-wrap leading-relaxed text-xl">
-                        {cardContent}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(post.created_at)}
-                      </span>
-                      <div className="flex space-x-2">
-                        <Button
-                          onClick={() => handleCopyPost(post.content)}
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </div>
-              </div>
-            ) : (
-              // Long text: No image for readability
-              <div className="p-6">
-                  <CardHeader className="p-0 mb-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center space-x-2">
-                        <BookOpen className="h-5 w-5 text-primary" />
-                        <span className="text-sm text-muted-foreground">
-                          {post.pdf_title}
-                        </span>
-                      </div>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                        Kart {post.post_order}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="prose prose-xl max-w-none text-card-foreground mb-4">
-                      <p className="whitespace-pre-wrap leading-relaxed text-xl">
-                        {cardContent}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(post.created_at)}
-                      </span>
-                      <div className="flex space-x-2">
-                        <Button
-                          onClick={() => handleCopyPost(post.content)}
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </div>
-            )}
-          </div>
-
-          {/* Mobile Layout - Conditional image for short text */}
-          <div className="md:hidden">
-            {isShortText && (
-              <div className="relative h-48 overflow-hidden">
-                {imageLoading ? (
-                  <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center">
-                    <span className="text-muted-foreground text-sm">Yükleniyor...</span>
+            {imageUrl && (
+              <div className="relative h-80 overflow-hidden">
+                <img 
+                  src={imageUrl}
+                  alt="Reading card illustration"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    console.error('Image loading failed');
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card/90" />
+                {/* Overlay content */}
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <BookOpen className="h-4 w-4 text-white" />
+                    <span className="text-sm text-white/90">
+                      {post.pdf_title}
+                    </span>
+                    <span className="ml-auto text-xs text-white/80 bg-white/20 px-2 py-1 rounded-full">
+                      Kart {post.post_order}
+                    </span>
                   </div>
-                ) : imageUrl ? (
-                  <img 
-                    src={imageUrl}
-                    alt="Floral oil painting illustration"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error('Mobile image loading failed, trying fallback');
-                      const target = e.target as HTMLImageElement;
-                      const fallbackSeed = Math.random().toString(36).substring(7);
-                      target.src = `https://source.unsplash.com/800x600/?oil-painting,flowers,art&sig=${fallbackSeed}`;
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                    <span className="text-muted-foreground text-sm">Resim yüklenemedi</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/30" />
+                </div>
               </div>
             )}
             <div className="p-6">
-              <CardHeader className="p-0 mb-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="h-4 w-4 text-primary" />
-                    <span className="text-xs text-muted-foreground">
-                      {post.pdf_title}
+              {!imageUrl && (
+                <div className="mb-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center space-x-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <span className="text-sm text-muted-foreground">
+                        {post.pdf_title}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                      Kart {post.post_order}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                    Kart {post.post_order}
-                  </span>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="prose prose-xl max-w-none text-card-foreground mb-4">
-                  <p className="whitespace-pre-wrap leading-relaxed text-xl">
-                    {cardContent}
-                  </p>
+              )}
+              <div className="prose prose-xl max-w-none text-card-foreground mb-4">
+                <p className="whitespace-pre-wrap leading-relaxed text-xl">
+                  {cardContent}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(post.created_at)}
+                </span>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => handleCopyPost(post.content)}
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(post.created_at)}
-                  </span>
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => handleCopyPost(post.content)}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Layout - Always show image if available */}
+          <div className="md:hidden">
+            {imageUrl && (
+              <div className="relative h-60 overflow-hidden">
+                <img 
+                  src={imageUrl}
+                  alt="Reading card illustration"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('Mobile image loading failed');
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card/90" />
+                {/* Mobile overlay content */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <BookOpen className="h-4 w-4 text-white" />
+                    <span className="text-xs text-white/90">
+                      {post.pdf_title}
+                    </span>
+                    <span className="ml-auto text-xs text-white/80 bg-white/20 px-2 py-1 rounded-full">
+                      Kart {post.post_order}
+                    </span>
                   </div>
                 </div>
-              </CardContent>
+              </div>
+            )}
+            <div className="p-6">
+              {!imageUrl && (
+                <div className="mb-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center space-x-2">
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">
+                        {post.pdf_title}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                      Kart {post.post_order}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div className="prose prose-xl max-w-none text-card-foreground mb-4">
+                <p className="whitespace-pre-wrap leading-relaxed text-lg">
+                  {cardContent}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(post.created_at)}
+                </span>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => handleCopyPost(post.content)}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </Card>

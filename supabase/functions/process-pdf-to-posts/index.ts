@@ -146,19 +146,52 @@ Kurallar:
     
     console.log('Parsed posts count:', posts.length);
 
-    // Save reading cards to database
-    const postsToInsert = posts.map((content: string, index: number) => ({
-      user_id: pdf.user_id,
-      pdf_id: pdfId,
-      title: `${pdf.title} - Kart ${index + 1}`,
-      content: content.trim(),
-      post_order: index + 1,
-      metadata: {
-        source_pdf: pdf.title,
-        generated_at: new Date().toISOString(),
-        type: 'reading_card'
+    // Function to get random image from Unsplash collection
+    const getUnsplashImageUrl = async (seedId: string) => {
+      try {
+        const collectionId = 'YUJj5hPgZfg'; // User's specified collection
+        const seed = seedId.substring(0, 8);
+        
+        const response = await fetch(`https://api.unsplash.com/photos/random?collections=${collectionId}&client_id=${Deno.env.get('UNSPLASH_ACCESS_KEY')}`);
+        
+        if (!response.ok) {
+          console.error('Unsplash API Error:', response.status);
+          // Fallback to a deterministic URL based on seed
+          return `https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&seed=${seed}`;
+        }
+        
+        const data = await response.json();
+        return data.urls?.regular || `https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&seed=${seed}`;
+      } catch (error) {
+        console.error('Error fetching Unsplash image:', error);
+        // Return a fallback image with seed for consistency
+        return `https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&seed=${seedId.substring(0, 8)}`;
       }
-    }));
+    };
+
+    // Save reading cards to database with assigned images
+    const postsToInsert = await Promise.all(
+      posts.map(async (content: string, index: number) => {
+        // Generate unique but consistent seed for each post
+        const postSeed = `${pdfId}-${index}`;
+        const imageUrl = await getUnsplashImageUrl(postSeed);
+        
+        return {
+          user_id: pdf.user_id,
+          pdf_id: pdfId,
+          title: `${pdf.title} - Kart ${index + 1}`,
+          content: content.trim(),
+          post_order: index + 1,
+          image_url: imageUrl,
+          metadata: {
+            source_pdf: pdf.title,
+            generated_at: new Date().toISOString(),
+            type: 'reading_card',
+            image_seed: postSeed
+          }
+        };
+      })
+    );
 
     const { error: insertError } = await supabaseClient
       .from('posts')
