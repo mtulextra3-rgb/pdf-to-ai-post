@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navigation } from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Share2, BookOpen } from 'lucide-react';
+import { Copy, Share2, BookOpen, Bookmark, Zap } from 'lucide-react';
+import { FlashcardDialog } from '@/components/FlashcardDialog';
 import { toast } from 'sonner';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
@@ -28,6 +29,12 @@ export default function Timeline() {
   const [searchParams] = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savedCards, setSavedCards] = useState<Set<string>>(new Set());
+  const [flashcardDialog, setFlashcardDialog] = useState<{
+    isOpen: boolean;
+    postContent: string;
+  }>({ isOpen: false, postContent: '' });
+  
   const selectedPdfId = searchParams.get('pdf');
 
   useEffect(() => {
@@ -36,6 +43,7 @@ export default function Timeline() {
       return;
     }
     fetchPosts();
+    fetchSavedCards();
   }, [user, navigate, selectedPdfId]);
 
   const fetchPosts = async () => {
@@ -73,6 +81,71 @@ export default function Timeline() {
     }
   };
 
+  const fetchSavedCards = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('saved_cards')
+        .select('post_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      const savedPostIds = new Set(data?.map(item => item.post_id) || []);
+      setSavedCards(savedPostIds);
+    } catch (error: any) {
+      console.error('Error fetching saved cards:', error);
+    }
+  };
+
+  const handleSaveCard = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      if (savedCards.has(postId)) {
+        // Unsave the card
+        const { error } = await supabase
+          .from('saved_cards')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', postId);
+
+        if (error) throw error;
+        
+        setSavedCards(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+        toast.success('Kart kaydedilenlerden kaldırıldı');
+      } else {
+        // Save the card
+        const { error } = await supabase
+          .from('saved_cards')
+          .insert({
+            user_id: user.id,
+            post_id: postId
+          });
+
+        if (error) throw error;
+        
+        setSavedCards(prev => new Set([...prev, postId]));
+        toast.success('Kart kaydedilenlere eklendi!');
+      }
+    } catch (error: any) {
+      console.error('Error saving/unsaving card:', error);
+      toast.error('İşlem sırasında hata oluştu');
+    }
+  };
+
+  const handleCreateFlashcard = (postContent: string) => {
+    setFlashcardDialog({
+      isOpen: true,
+      postContent
+    });
+  };
+
   const handleCopyPost = async (content: string) => {
     try {
       await navigator.clipboard.writeText(content);
@@ -92,229 +165,236 @@ export default function Timeline() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-muted-foreground">Yükleniyor...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleShare = async (post: Post) => {
+    const shareText = `${post.title}\n\n${post.content}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: post.title,
+          text: shareText,
+        });
+      } catch (error) {
+        // User cancelled sharing
+      }
+    } else {
+      await navigator.clipboard.writeText(shareText);
+      toast.success('İçerik panoya kopyalandı!');
+    }
+  };
 
-  // Reading card component
   const ReadingCard = ({ post, index }: { post: Post; index: number }) => {
     const { ref, inView } = useInView({
-      triggerOnce: true,
       threshold: 0.1,
+      triggerOnce: true,
     });
 
-    // Use full content as card content
-    const cardContent = post.content.trim();
-    
-    // Use the image URL from database if available
-    const imageUrl = post.image_url;
-
-    // Get random position for image (top, right, left)
-    const getRandomPosition = () => {
-      const positions = ['top', 'right', 'left'];
-      const hash = post.id.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      return positions[Math.abs(hash) % positions.length];
-    };
-
-    const imagePosition = getRandomPosition();
-
-    const renderCardHeader = () => (
-      <div className="mb-4">
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center space-x-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            <span className="text-sm text-muted-foreground">
-              {post.pdf_title}
-            </span>
-          </div>
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-            Kart {post.post_order}
-          </span>
-        </div>
-      </div>
-    );
-
-    const renderCardContent = () => (
-      <div className="prose prose-xl max-w-none text-card-foreground mb-4">
-        <p className="whitespace-pre-wrap leading-relaxed text-xl">
-          {cardContent}
-        </p>
-      </div>
-    );
-
-    const renderCardActions = () => (
-      <div className="flex justify-between items-center">
-        <span className="text-xs text-muted-foreground">
-          {formatDate(post.created_at)}
-        </span>
-        <div className="flex space-x-2">
-          <Button
-            onClick={() => handleCopyPost(post.content)}
-            variant="ghost"
-            size="sm"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-
-    const renderImage = (className: string) => (
-      <div className={`overflow-hidden ${className}`}>
-        <img 
-          src={imageUrl}
-          alt="Reading card illustration"
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={(e) => {
-            console.error('Image loading failed');
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-          }}
-        />
-      </div>
-    );
+    // Randomly determine layout for desktop
+    const layouts = ['top', 'left', 'right'];
+    const layout = layouts[index % layouts.length];
 
     return (
       <div
         ref={ref}
-        className={`transition-all duration-700 ${
-          inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        className={`transform transition-all duration-700 ${
+          inView ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
         }`}
       >
-        <Card className="bg-card shadow-elegant border-border hover:shadow-glow transition-all duration-300 overflow-hidden group">
+        <Card className="bg-gradient-card border-accent/20 hover:shadow-elegant transition-all duration-300">
           {/* Desktop Layout */}
           <div className="hidden md:block">
-            {imageUrl ? (
-              <>
-                {imagePosition === 'top' && (
-                  <>
-                    {renderImage("h-80")}
-                    <div className="p-6">
-                      {renderCardHeader()}
-                      {renderCardContent()}
-                      {renderCardActions()}
-                    </div>
-                  </>
-                )}
-                
-                {imagePosition === 'left' && (
-                  <div className="flex">
-                    {renderImage("w-80 h-96")}
-                    <div className="flex-1 p-6 flex flex-col">
-                      {renderCardHeader()}
-                      <div className="flex-1">
-                        {renderCardContent()}
-                      </div>
-                      {renderCardActions()}
-                    </div>
-                  </div>
-                )}
-                
-                {imagePosition === 'right' && (
-                  <div className="flex">
-                    <div className="flex-1 p-6 flex flex-col">
-                      {renderCardHeader()}
-                      <div className="flex-1">
-                        {renderCardContent()}
-                      </div>
-                      {renderCardActions()}
-                    </div>
-                    {renderImage("w-80 h-96")}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="p-6">
-                {renderCardHeader()}
-                {renderCardContent()}
-                {renderCardActions()}
+            {layout === 'top' && post.image_url && (
+              <div className="w-full h-80">
+                <img
+                  src={post.image_url}
+                  alt="Post illustration"
+                  className="w-full h-full object-cover rounded-t-lg"
+                />
               </div>
             )}
+            
+            <div className={`flex ${layout === 'left' ? 'flex-row-reverse' : layout === 'right' ? 'flex-row' : 'flex-col'}`}>
+              {layout !== 'top' && post.image_url && (
+                <div className="w-80 h-64 flex-shrink-0">
+                  <img
+                    src={post.image_url}
+                    alt="Post illustration"
+                    className={`w-full h-full object-cover ${
+                      layout === 'left' ? 'rounded-r-lg' : 'rounded-l-lg'
+                    }`}
+                  />
+                </div>
+              )}
+              
+              <div className="flex-1">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start mb-2">
+                    <CardTitle className="text-xl font-bold leading-tight">
+                      {post.title}
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="text-sm">
+                    <BookOpen className="inline h-4 w-4 mr-1" />
+                    {post.pdf_title} • {formatDate(post.created_at)}
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <p className="text-foreground/90 leading-relaxed">
+                    {post.content}
+                  </p>
+                  
+                  <div className="flex justify-between items-center pt-2">
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopyPost(post.content)}
+                        className="flex items-center space-x-1"
+                      >
+                        <Copy className="h-4 w-4" />
+                        <span>Kopyala</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleShare(post)}
+                        className="flex items-center space-x-1"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        <span>Paylaş</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={savedCards.has(post.id) ? "default" : "outline"}
+                        onClick={() => handleSaveCard(post.id)}
+                        className="flex items-center space-x-1"
+                      >
+                        <Bookmark className="h-4 w-4" />
+                        <span>{savedCards.has(post.id) ? 'Kaydedildi' : 'Kaydet'}</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCreateFlashcard(post.content)}
+                        className="flex items-center space-x-1"
+                      >
+                        <Zap className="h-4 w-4" />
+                        <span>Flashcard</span>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </div>
+            </div>
           </div>
 
-          {/* Mobile Layout - Always top position */}
+          {/* Mobile Layout - Always image on top */}
           <div className="md:hidden">
-            {imageUrl && renderImage("h-60")}
-            <div className="p-6">
-              {!imageUrl && renderCardHeader()}
-              <div className="prose prose-xl max-w-none text-card-foreground mb-4">
-                <p className="whitespace-pre-wrap leading-relaxed text-lg">
-                  {cardContent}
-                </p>
+            {post.image_url && (
+              <div className="w-full h-60">
+                <img
+                  src={post.image_url}
+                  alt="Post illustration"
+                  className="w-full h-full object-cover rounded-t-lg"
+                />
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(post.created_at)}
-                </span>
+            )}
+            
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start mb-2">
+                <CardTitle className="text-lg font-bold leading-tight">
+                  {post.title}
+                </CardTitle>
+              </div>
+              <CardDescription className="text-sm">
+                <BookOpen className="inline h-4 w-4 mr-1" />
+                {post.pdf_title} • {formatDate(post.created_at)}
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <p className="text-foreground/90 leading-relaxed text-sm">
+                {post.content}
+              </p>
+              
+              <div className="flex flex-col space-y-2">
                 <div className="flex space-x-2">
                   <Button
-                    onClick={() => handleCopyPost(post.content)}
-                    variant="ghost"
                     size="sm"
+                    variant="outline"
+                    onClick={() => handleCopyPost(post.content)}
+                    className="flex items-center space-x-1 flex-1"
                   >
                     <Copy className="h-4 w-4" />
+                    <span>Kopyala</span>
                   </Button>
                   <Button
-                    variant="ghost"
                     size="sm"
+                    variant="outline"
+                    onClick={() => handleShare(post)}
+                    className="flex items-center space-x-1 flex-1"
                   >
                     <Share2 className="h-4 w-4" />
+                    <span>Paylaş</span>
+                  </Button>
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant={savedCards.has(post.id) ? "default" : "outline"}
+                    onClick={() => handleSaveCard(post.id)}
+                    className="flex items-center space-x-1 flex-1"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                    <span>{savedCards.has(post.id) ? 'Kaydedildi' : 'Kaydet'}</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCreateFlashcard(post.content)}
+                    className="flex items-center space-x-1 flex-1"
+                  >
+                    <Zap className="h-4 w-4" />
+                    <span>Flashcard</span>
                   </Button>
                 </div>
               </div>
-            </div>
+            </CardContent>
           </div>
         </Card>
       </div>
     );
   };
 
+  if (!user) return null;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-background">
       <Navigation />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            {selectedPdfId ? 'Okuma Kartları' : 'Timeline'}
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+            {selectedPdfId ? 'PDF Timeline' : 'Okuma Kartları'}
           </h1>
           <p className="text-muted-foreground">
             {selectedPdfId 
-              ? 'Seçilen PDF\'den oluşturulan okuma kartları' 
-              : 'PDF\'lerden oluşturulan tüm okuma kartlarınız'}
+              ? 'Seçili PDF\'den oluşturulan okuma kartları' 
+              : 'AI tarafından PDF\'lerinizden oluşturulan okuma kartları'}
           </p>
         </div>
 
-        {posts.length === 0 ? (
-          <div className="text-center py-16">
-            <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-            <div className="text-lg text-muted-foreground mb-4">
-              {selectedPdfId ? 'Bu PDF için henüz kart oluşturulmamış' : 'Henüz hiç okuma kartı oluşturulmamış'}
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              PDF yükleyip AI ile işlettikten sonra okuma kartlarınız burada görünecek
+        {loading ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Kartlar yükleniyor...</p>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">
+              {selectedPdfId ? 'Bu PDF için henüz kart oluşturulmamış.' : 'Henüz okuma kartınız yok.'}
             </p>
-            <Button onClick={() => navigate('/upload')} className="bg-primary hover:bg-primary/90">
-              PDF Yükle
+            <Button asChild>
+              <a href="/upload">PDF Yükle</a>
             </Button>
           </div>
         ) : (
@@ -324,6 +404,12 @@ export default function Timeline() {
             ))}
           </div>
         )}
+        
+        <FlashcardDialog
+          isOpen={flashcardDialog.isOpen}
+          onClose={() => setFlashcardDialog({ isOpen: false, postContent: '' })}
+          postContent={flashcardDialog.postContent}
+        />
       </div>
     </div>
   );

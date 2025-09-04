@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Clock, LogOut, Upload, FolderOpen, Sun, Moon } from 'lucide-react';
+import { FileText, Clock, LogOut, Upload, FolderOpen, Sun, Moon, Bookmark, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 
@@ -66,6 +66,26 @@ export const Navigation = () => {
                 >
                   <Clock className="h-4 w-4" />
                   <span>Timeline</span>
+                </Button>
+              </Link>
+              
+              <Link to="/saved-cards">
+                <Button 
+                  variant={location.pathname === '/saved-cards' ? 'default' : 'ghost'}
+                  className="flex items-center space-x-2"
+                >
+                  <Bookmark className="h-4 w-4" />
+                  <span>Kaydedilenler</span>
+                </Button>
+              </Link>
+              
+              <Link to="/flashcards">
+                <Button 
+                  variant={location.pathname === '/flashcards' ? 'default' : 'ghost'}
+                  className="flex items-center space-x-2"
+                >
+                  <Zap className="h-4 w-4" />
+                  <span>Flashcards</span>
                 </Button>
               </Link>
             </div>
