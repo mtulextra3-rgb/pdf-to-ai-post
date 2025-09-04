@@ -146,52 +146,77 @@ Kurallar:
     
     console.log('Parsed posts count:', posts.length);
 
-    // Function to get random image from Unsplash collection
-    const getUnsplashImageUrl = async (seedId: string) => {
+    // Function to fetch all collection images and select random ones
+    let collectionImages: any[] = [];
+    
+    const fetchCollectionImages = async () => {
       try {
         const collectionId = 'YUJj5hPgZfg'; // User's specified collection
-        const seed = seedId.substring(0, 8);
+        console.log('Fetching images from collection:', collectionId);
         
-        const response = await fetch(`https://api.unsplash.com/photos/random?collections=${collectionId}&client_id=${Deno.env.get('UNSPLASH_ACCESS_KEY')}`);
+        // Fetch multiple pages if needed (30 photos per page)
+        const response = await fetch(`https://api.unsplash.com/collections/${collectionId}/photos?per_page=30&client_id=${Deno.env.get('UNSPLASH_ACCESS_KEY')}`);
         
         if (!response.ok) {
-          console.error('Unsplash API Error:', response.status);
-          // Fallback to a deterministic URL based on seed
-          return `https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&seed=${seed}`;
+          console.error('Unsplash API Error:', response.status, await response.text());
+          return [];
         }
         
-        const data = await response.json();
-        return data.urls?.regular || `https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&seed=${seed}`;
+        const images = await response.json();
+        console.log('Fetched images count:', images.length);
+        return images;
       } catch (error) {
-        console.error('Error fetching Unsplash image:', error);
-        // Return a fallback image with seed for consistency
-        return `https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&seed=${seedId.substring(0, 8)}`;
+        console.error('Error fetching collection images:', error);
+        return [];
       }
     };
 
+    // Fetch collection images once
+    collectionImages = await fetchCollectionImages();
+    
+    const getRandomImageFromCollection = (postIndex: number) => {
+      if (collectionImages.length === 0) {
+        // Fallback image if collection fetch failed
+        const seed = `${pdfId}-${postIndex}`.substring(0, 8);
+        return `https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&seed=${seed}`;
+      }
+      
+      // Use a deterministic but varied selection based on post index and PDF ID
+      const hash = `${pdfId}-${postIndex}`.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      
+      const imageIndex = Math.abs(hash) % collectionImages.length;
+      const selectedImage = collectionImages[imageIndex];
+      
+      console.log(`Post ${postIndex}: Selected image ${imageIndex} from ${collectionImages.length} available`);
+      return selectedImage.urls?.regular || selectedImage.urls?.full;
+    };
+
     // Save reading cards to database with assigned images
-    const postsToInsert = await Promise.all(
-      posts.map(async (content: string, index: number) => {
-        // Generate unique but consistent seed for each post
-        const postSeed = `${pdfId}-${index}`;
-        const imageUrl = await getUnsplashImageUrl(postSeed);
-        
-        return {
-          user_id: pdf.user_id,
-          pdf_id: pdfId,
-          title: `${pdf.title} - Kart ${index + 1}`,
-          content: content.trim(),
-          post_order: index + 1,
-          image_url: imageUrl,
-          metadata: {
-            source_pdf: pdf.title,
-            generated_at: new Date().toISOString(),
-            type: 'reading_card',
-            image_seed: postSeed
-          }
-        };
-      })
-    );
+    const postsToInsert = posts.map((content: string, index: number) => {
+      // Get deterministic random image from collection
+      const imageUrl = getRandomImageFromCollection(index);
+      
+      return {
+        user_id: pdf.user_id,
+        pdf_id: pdfId,
+        title: `${pdf.title} - Kart ${index + 1}`,
+        content: content.trim(),
+        post_order: index + 1,
+        image_url: imageUrl,
+        metadata: {
+          source_pdf: pdf.title,
+          generated_at: new Date().toISOString(),
+          type: 'reading_card',
+          image_index: Math.abs(`${pdfId}-${index}`.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+          }, 0)) % (collectionImages.length || 1)
+        }
+      };
+    });
 
     const { error: insertError } = await supabaseClient
       .from('posts')
