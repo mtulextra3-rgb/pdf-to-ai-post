@@ -200,167 +200,183 @@ export default function Timeline() {
           inView ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
         }`}
       >
-        <Card className="bg-gradient-card border-accent/20 hover:shadow-elegant transition-all duration-300">
+        <Card className="group bg-gradient-card border-accent/20 hover:shadow-elegant transition-all duration-500 hover:border-accent/40 overflow-hidden">
           {/* Desktop Layout */}
           <div className="hidden md:block">
             {layout === 'top' && post.image_url && (
-              <div className="w-full h-80">
+              <div className="relative w-full h-72 overflow-hidden">
                 <img
                   src={post.image_url}
                   alt="Post illustration"
-                  className="w-full h-full object-cover rounded-t-lg"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
               </div>
             )}
             
             <div className={`flex ${layout === 'left' ? 'flex-row-reverse' : layout === 'right' ? 'flex-row' : 'flex-col'}`}>
               {layout !== 'top' && post.image_url && (
-                <div className="w-80 h-64 flex-shrink-0">
+                <div className="relative w-80 h-72 flex-shrink-0 overflow-hidden">
                   <img
                     src={post.image_url}
                     alt="Post illustration"
-                    className={`w-full h-full object-cover ${
-                      layout === 'left' ? 'rounded-r-lg' : 'rounded-l-lg'
-                    }`}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-r from-background/10 to-transparent" />
                 </div>
               )}
               
-              <div className="flex-1">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start mb-2">
-                    <CardTitle className="text-xl font-bold leading-tight">
+              <div className="flex-1 p-8">
+                <div className="space-y-6">
+                  {/* Header */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{post.pdf_title}</span>
+                      <span className="text-muted-foreground/60">•</span>
+                      <span>{formatDate(post.created_at)}</span>
+                    </div>
+                    
+                    <h2 className="text-2xl font-bold leading-tight text-foreground group-hover:text-primary transition-colors duration-300">
                       {post.title}
-                    </CardTitle>
+                    </h2>
                   </div>
-                  <CardDescription className="text-sm">
-                    <BookOpen className="inline h-4 w-4 mr-1" />
-                    {post.pdf_title} • {formatDate(post.created_at)}
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <p className="text-foreground/90 leading-relaxed">
-                    {post.content}
-                  </p>
                   
-                  <div className="flex justify-between items-center pt-2">
-                    <div className="flex space-x-2">
+                  {/* Content */}
+                  <div className="prose prose-gray dark:prose-invert max-w-none">
+                    <p className="text-lg leading-relaxed text-foreground/90 font-normal tracking-wide">
+                      {post.content}
+                    </p>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex items-center justify-between pt-4 border-t border-border/40">
+                    <div className="flex items-center space-x-3">
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => handleCopyPost(post.content)}
-                        className="flex items-center space-x-1"
+                        className="hover:bg-primary/10 hover:text-primary transition-all duration-300"
                       >
-                        <Copy className="h-4 w-4" />
-                        <span>Kopyala</span>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Kopyala
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => handleShare(post)}
-                        className="flex items-center space-x-1"
+                        className="hover:bg-primary/10 hover:text-primary transition-all duration-300"
                       >
-                        <Share2 className="h-4 w-4" />
-                        <span>Paylaş</span>
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Paylaş
                       </Button>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
                       <Button
                         size="sm"
                         variant={savedCards.has(post.id) ? "default" : "outline"}
                         onClick={() => handleSaveCard(post.id)}
-                        className="flex items-center space-x-1"
+                        className="transition-all duration-300"
                       >
-                        <Bookmark className="h-4 w-4" />
-                        <span>{savedCards.has(post.id) ? 'Kaydedildi' : 'Kaydet'}</span>
+                        <Bookmark className="h-4 w-4 mr-2" />
+                        {savedCards.has(post.id) ? 'Kaydedildi' : 'Kaydet'}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleCreateFlashcard(post.content)}
-                        className="flex items-center space-x-1"
+                        className="hover:bg-accent hover:text-accent-foreground transition-all duration-300"
                       >
-                        <Zap className="h-4 w-4" />
-                        <span>Flashcard</span>
+                        <Zap className="h-4 w-4 mr-2" />
+                        Flashcard
                       </Button>
                     </div>
                   </div>
-                </CardContent>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Mobile Layout - Always image on top */}
+          {/* Mobile Layout */}
           <div className="md:hidden">
             {post.image_url && (
-              <div className="w-full h-60">
+              <div className="relative w-full h-56 overflow-hidden">
                 <img
                   src={post.image_url}
                   alt="Post illustration"
-                  className="w-full h-full object-cover rounded-t-lg"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
               </div>
             )}
             
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start mb-2">
-                <CardTitle className="text-lg font-bold leading-tight">
+            <div className="p-6 space-y-5">
+              {/* Header */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <span className="font-medium">{post.pdf_title}</span>
+                  <span className="text-muted-foreground/60">•</span>
+                  <span>{formatDate(post.created_at)}</span>
+                </div>
+                
+                <h2 className="text-xl font-bold leading-tight text-foreground">
                   {post.title}
-                </CardTitle>
+                </h2>
               </div>
-              <CardDescription className="text-sm">
-                <BookOpen className="inline h-4 w-4 mr-1" />
-                {post.pdf_title} • {formatDate(post.created_at)}
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <p className="text-foreground/90 leading-relaxed text-sm">
-                {post.content}
-              </p>
               
-              <div className="flex flex-col space-y-2">
-                <div className="flex space-x-2">
+              {/* Content */}
+              <div className="prose prose-gray dark:prose-invert max-w-none">
+                <p className="text-base leading-relaxed text-foreground/90 font-normal">
+                  {post.content}
+                </p>
+              </div>
+              
+              {/* Actions */}
+              <div className="space-y-3 pt-4 border-t border-border/40">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => handleCopyPost(post.content)}
-                    className="flex items-center space-x-1 flex-1"
+                    className="justify-center hover:bg-primary/10 hover:text-primary"
                   >
-                    <Copy className="h-4 w-4" />
-                    <span>Kopyala</span>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Kopyala
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => handleShare(post)}
-                    className="flex items-center space-x-1 flex-1"
+                    className="justify-center hover:bg-primary/10 hover:text-primary"
                   >
-                    <Share2 className="h-4 w-4" />
-                    <span>Paylaş</span>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Paylaş
                   </Button>
                 </div>
-                <div className="flex space-x-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     size="sm"
                     variant={savedCards.has(post.id) ? "default" : "outline"}
                     onClick={() => handleSaveCard(post.id)}
-                    className="flex items-center space-x-1 flex-1"
+                    className="justify-center"
                   >
-                    <Bookmark className="h-4 w-4" />
-                    <span>{savedCards.has(post.id) ? 'Kaydedildi' : 'Kaydet'}</span>
+                    <Bookmark className="h-4 w-4 mr-2" />
+                    {savedCards.has(post.id) ? 'Kaydedildi' : 'Kaydet'}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleCreateFlashcard(post.content)}
-                    className="flex items-center space-x-1 flex-1"
+                    className="justify-center hover:bg-accent"
                   >
-                    <Zap className="h-4 w-4" />
-                    <span>Flashcard</span>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Flashcard
                   </Button>
                 </div>
               </div>
-            </CardContent>
+            </div>
           </div>
         </Card>
       </div>
