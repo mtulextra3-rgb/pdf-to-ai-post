@@ -44,7 +44,7 @@ export default function SavedCards() {
           id,
           post_id,
           created_at,
-          posts!inner (
+          posts (
             id,
             title,
             content,
