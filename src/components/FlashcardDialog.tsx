@@ -23,7 +23,7 @@ export const FlashcardDialog = ({ isOpen, onClose, postContent }: FlashcardDialo
   useState(() => {
     if (isOpen && postContent) {
       const words = postContent.trim().split(' ');
-      const defaultQuestion = words.slice(0, 2).join(' ');
+      const defaultQuestion = words.slice(0, 2).join(' ') + '...?';
       setQuestion(defaultQuestion);
       setAnswer(postContent);
     }

@@ -208,7 +208,7 @@ export default function Timeline() {
                 <img
                   src={post.image_url}
                   alt="Post illustration"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
               </div>
@@ -220,7 +220,7 @@ export default function Timeline() {
                   <img
                     src={post.image_url}
                     alt="Post illustration"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-background/10 to-transparent" />
                 </div>
@@ -244,12 +244,14 @@ export default function Timeline() {
                   
                   {/* Content */}
                   <div className="prose prose-gray dark:prose-invert max-w-none">
-                    <p className="text-lg leading-relaxed text-foreground/90 font-normal tracking-wide">
+                    <p className="text-lg leading-[1.8] text-foreground/90 font-normal tracking-wide" style={{fontFamily: 'var(--font-reading)'}}>
                       {post.content}
                     </p>
                   </div>
-                  
-                  {/* Actions */}
+                </div>
+                
+                {/* Actions - Always at bottom */}
+                <div className="p-8 pt-0">
                   <div className="flex items-center justify-between pt-4 border-t border-border/40">
                     <div className="flex items-center space-x-3">
                       <Button
@@ -305,7 +307,7 @@ export default function Timeline() {
                 <img
                   src={post.image_url}
                   alt="Post illustration"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
               </div>
@@ -328,12 +330,12 @@ export default function Timeline() {
               
               {/* Content */}
               <div className="prose prose-gray dark:prose-invert max-w-none">
-                <p className="text-base leading-relaxed text-foreground/90 font-normal">
+                <p className="text-base leading-[1.8] text-foreground/90 font-normal" style={{fontFamily: 'var(--font-reading)'}}>
                   {post.content}
                 </p>
               </div>
               
-              {/* Actions */}
+              {/* Actions - Always at bottom */}
               <div className="space-y-3 pt-4 border-t border-border/40">
                 <div className="grid grid-cols-2 gap-2">
                   <Button

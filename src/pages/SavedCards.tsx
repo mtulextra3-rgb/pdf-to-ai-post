@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigation } from '@/components/Navigation';
-import { Copy, Trash2, Share2 } from 'lucide-react';
+import { Copy, Trash2, Share2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SavedCard {
@@ -141,63 +141,166 @@ export default function SavedCards() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {savedCards.map((savedCard) => (
-              <Card key={savedCard.id} className="bg-gradient-card border-accent/20">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg mb-2">{savedCard.posts.title}</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {savedCard.posts.pdfs?.title && `PDF: ${savedCard.posts.pdfs.title} • `}
-                        Kaydedilme: {new Date(savedCard.created_at).toLocaleDateString('tr-TR')}
-                      </p>
-                    </div>
-                    {savedCard.posts.image_url && (
+          <div className="space-y-8">
+            {savedCards.map((savedCard, index) => (
+              <Card key={savedCard.id} className="group bg-gradient-card border-accent/20 hover:shadow-elegant transition-all duration-500 hover:border-accent/40 overflow-hidden">
+                {/* Desktop Layout */}
+                <div className="hidden md:block">
+                  {(index % 3 === 0) && savedCard.posts.image_url && (
+                    <div className="relative w-full h-72 overflow-hidden">
                       <img
                         src={savedCard.posts.image_url}
-                        alt="Post image"
-                        className="w-20 h-20 object-cover rounded-lg"
+                        alt="Post illustration"
+                        className="w-full h-full object-cover"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
+                    </div>
+                  )}
+                  
+                  <div className={`flex ${index % 3 === 1 ? 'flex-row-reverse' : index % 3 === 2 ? 'flex-row' : 'flex-col'}`}>
+                    {index % 3 !== 0 && savedCard.posts.image_url && (
+                      <div className="relative w-80 h-72 flex-shrink-0 overflow-hidden">
+                        <img
+                          src={savedCard.posts.image_url}
+                          alt="Post illustration"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-background/10 to-transparent" />
+                      </div>
                     )}
+                    
+                    <div className="flex-1 p-8">
+                      <div className="space-y-6">
+                        {/* Header */}
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                            <BookOpen className="h-4 w-4 text-primary" />
+                            <span className="font-medium">{savedCard.posts.pdfs?.title || 'Bilinmeyen PDF'}</span>
+                            <span className="text-muted-foreground/60">•</span>
+                            <span>Kaydedilme: {new Date(savedCard.created_at).toLocaleDateString('tr-TR')}</span>
+                          </div>
+                          
+                          <h2 className="text-2xl font-bold leading-tight text-foreground group-hover:text-primary transition-colors duration-300">
+                            {savedCard.posts.title}
+                          </h2>
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="prose prose-gray dark:prose-invert max-w-none">
+                          <p className="text-lg leading-[1.8] text-foreground/90 font-normal tracking-wide" style={{fontFamily: 'var(--font-reading)'}}>
+                            {savedCard.posts.content}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Actions - Always at bottom */}
+                      <div className="p-8 pt-0">
+                        <div className="flex items-center justify-between pt-4 border-t border-border/40">
+                          <div className="flex items-center space-x-3">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleCopyContent(savedCard.posts.content)}
+                              className="hover:bg-primary/10 hover:text-primary transition-all duration-300"
+                            >
+                              <Copy className="h-4 w-4 mr-2" />
+                              Kopyala
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleShare(savedCard.posts)}
+                              className="hover:bg-primary/10 hover:text-primary transition-all duration-300"
+                            >
+                              <Share2 className="h-4 w-4 mr-2" />
+                              Paylaş
+                            </Button>
+                          </div>
+                          
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleUnsaveCard(savedCard.id)}
+                            className="transition-all duration-300"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Kaldır
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-foreground/90 mb-4 leading-relaxed">
-                    {savedCard.posts.content}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <div className="flex space-x-2">
+                </div>
+
+                {/* Mobile Layout */}
+                <div className="md:hidden">
+                  {savedCard.posts.image_url && (
+                    <div className="relative w-full h-56 overflow-hidden">
+                      <img
+                        src={savedCard.posts.image_url}
+                        alt="Post illustration"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
+                    </div>
+                  )}
+                  
+                  <div className="p-6 space-y-5">
+                    {/* Header */}
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <BookOpen className="h-4 w-4 text-primary" />
+                        <span className="font-medium">{savedCard.posts.pdfs?.title || 'Bilinmeyen PDF'}</span>
+                        <span className="text-muted-foreground/60">•</span>
+                        <span>Kaydedilme: {new Date(savedCard.created_at).toLocaleDateString('tr-TR')}</span>
+                      </div>
+                      
+                      <h2 className="text-xl font-bold leading-tight text-foreground">
+                        {savedCard.posts.title}
+                      </h2>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="prose prose-gray dark:prose-invert max-w-none">
+                      <p className="text-base leading-[1.8] text-foreground/90 font-normal" style={{fontFamily: 'var(--font-reading)'}}>
+                        {savedCard.posts.content}
+                      </p>
+                    </div>
+                    
+                    {/* Actions - Always at bottom */}
+                    <div className="space-y-3 pt-4 border-t border-border/40">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleCopyContent(savedCard.posts.content)}
+                          className="justify-center hover:bg-primary/10 hover:text-primary"
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Kopyala
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleShare(savedCard.posts)}
+                          className="justify-center hover:bg-primary/10 hover:text-primary"
+                        >
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Paylaş
+                        </Button>
+                      </div>
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => handleCopyContent(savedCard.posts.content)}
-                        className="flex items-center space-x-1"
+                        variant="destructive"
+                        onClick={() => handleUnsaveCard(savedCard.id)}
+                        className="w-full justify-center"
                       >
-                        <Copy className="h-4 w-4" />
-                        <span>Kopyala</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleShare(savedCard.posts)}
-                        className="flex items-center space-x-1"
-                      >
-                        <Share2 className="h-4 w-4" />
-                        <span>Paylaş</span>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Kaldır
                       </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleUnsaveCard(savedCard.id)}
-                      className="flex items-center space-x-1"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Kaldır</span>
-                    </Button>
                   </div>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>

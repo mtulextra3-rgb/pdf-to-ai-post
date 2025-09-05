@@ -12,6 +12,9 @@ All colors MUST be HSL.
     --background: 210 20% 97%;
     --foreground: 210 10% 15%;
 
+    /* Reading font for better readability */
+    --font-reading: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+
     --card: 0 0% 100%;
     --card-foreground: 210 10% 15%;
 
@@ -117,5 +120,6 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-reading);
   }
 }
