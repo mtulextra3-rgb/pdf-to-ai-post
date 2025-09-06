@@ -49,13 +49,13 @@ export const Navigation = () => {
                 </Button>
               </Link>
               
-              <Link to="/pdfs">
+              <Link to="/texts">
                 <Button 
-                  variant={location.pathname === '/pdfs' ? 'default' : 'ghost'}
+                  variant={location.pathname === '/texts' ? 'default' : 'ghost'}
                   className="flex items-center space-x-2"
                 >
                   <FolderOpen className="h-4 w-4" />
-                  <span>PDF'ler</span>
+                  <span>Metinler</span>
                 </Button>
               </Link>
               

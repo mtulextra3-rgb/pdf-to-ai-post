@@ -9,7 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Upload from "./pages/Upload";
 import Timeline from "./pages/Timeline";
-import PDFs from "./pages/PDFs";
+import Texts from "./pages/Texts";
 import SavedCards from "./pages/SavedCards";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
@@ -29,7 +29,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/timeline" element={<Timeline />} />
-              <Route path="/pdfs" element={<PDFs />} />
+              <Route path="/texts" element={<Texts />} />
               <Route path="/saved-cards" element={<SavedCards />} />
               <Route path="/flashcards" element={<Flashcards />} />
               <Route path="*" element={<NotFound />} />
