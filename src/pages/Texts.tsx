@@ -108,32 +108,23 @@ export default function Texts() {
   };
 
   const renderTextCard = (text: Text, isPublic = false) => (
-    <Card 
+    <div 
       key={text.id} 
-      className="bg-card hover:shadow-elegant transition-all duration-300 cursor-pointer group border-border relative overflow-hidden"
+      className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300 cursor-pointer group max-w-2xl mx-auto"
       onClick={() => viewTextCards(text.id, text.title)}
     >
-      {/* Cover Image or Default Design */}
-      <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-        {text.cover_image_url ? (
-          <img 
-            src={text.cover_image_url} 
-            alt={text.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="bg-primary/20 rounded-lg p-6 w-32 h-36 flex items-center justify-center border-2 border-primary/30">
-            <div className="text-center">
-              <FileText className="h-8 w-8 text-primary mb-2 mx-auto" />
-              <h4 className="text-sm font-semibold text-primary line-clamp-3 leading-tight">
-                {text.title}
-              </h4>
-            </div>
-          </div>
-        )}
-        
+      {/* User Info Header */}
+      <div className="flex items-center space-x-3 mb-4">
+        <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+          <User className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="font-medium text-sm text-foreground">
+            {isPublic ? "Topluluk üyesi" : "Sen"}
+          </p>
+        </div>
         {/* Status Badge */}
-        <div className="absolute top-3 right-3">
+        <div className="ml-auto">
           <Badge variant={text.is_public ? "default" : "secondary"} className="text-xs">
             {text.is_public ? (
               <><Globe className="h-3 w-3 mr-1" /> Public</>
@@ -142,82 +133,75 @@ export default function Texts() {
             )}
           </Badge>
         </div>
-        
-        {/* Processing Status */}
-        {!text.processed && (
-          <div className="absolute top-3 left-3">
-            <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">
-              İşleniyor
-            </Badge>
-          </div>
-        )}
       </div>
 
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-          {text.title}
-        </CardTitle>
-        
-        {text.author_name && (
-          <CardDescription className="text-sm font-medium text-muted-foreground">
-            Yazar: {text.author_name}
-          </CardDescription>
-        )}
-        
-        {text.description && (
-          <CardDescription className="text-sm line-clamp-2">
-            {text.description}
-          </CardDescription>
-        )}
-        
-        {isPublic && (
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <User className="h-3 w-3" />
-            <span>Topluluk üyesi</span>
-          </div>
-        )}
-      </CardHeader>
-
-      <CardContent className="pt-0">
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-          <div className="flex items-center space-x-1">
-            <Calendar className="h-3 w-3" />
-            <span className="text-xs">
-              {formatDate(text.upload_date)}
-            </span>
-          </div>
-          <span className="text-xs">{formatFileSize(text.file_size || 0)}</span>
+      {/* Main Content */}
+      <div className="flex space-x-4">
+        {/* Book Cover */}
+        <div className="flex-shrink-0">
+          {text.cover_image_url ? (
+            <img 
+              src={text.cover_image_url} 
+              alt={text.title}
+              className="w-20 h-28 object-cover rounded-md shadow-sm"
+            />
+          ) : (
+            <div className="w-20 h-28 bg-gradient-to-br from-primary/20 to-primary/10 rounded-md shadow-sm border border-primary/20 flex items-center justify-center p-2">
+              <div className="text-center">
+                <FileText className="h-4 w-4 text-primary mb-1 mx-auto" />
+                <p className="text-xs font-medium text-primary leading-tight line-clamp-3">
+                  {text.title}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+
+        {/* Text Info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-lg text-foreground mb-1 line-clamp-2">
+            {text.title}
+          </h3>
+          
+          {text.author_name && (
+            <p className="text-sm text-muted-foreground mb-2">
+              Yazar: {text.author_name}
+            </p>
+          )}
+          
+          {text.description && (
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-3 leading-relaxed">
+              {text.description}
+            </p>
+          )}
+
+          {/* Stats */}
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             {text.posts && text.posts.length > 0 && (
-              <span className="bg-primary/10 text-primary px-2 py-1 rounded-full">
-                {text.posts.length} kart
+              <span className="flex items-center space-x-1">
+                <span className="font-medium">{text.posts.length}</span>
+                <span>kart</span>
               </span>
             )}
             {text.view_count > 0 && (
-              <div className="flex items-center space-x-1">
-                <Eye className="h-3 w-3" />
-                <span>{text.view_count}</span>
-              </div>
+              <span className="flex items-center space-x-1">
+                <span className="font-medium">{text.view_count}</span>
+                <span>okuma</span>
+              </span>
             )}
           </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              viewTextCards(text.id, text.title);
-            }}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Processing Status */}
+      {!text.processed && (
+        <div className="mt-4 pt-4 border-t border-border">
+          <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">
+            İşleniyor...
+          </Badge>
+        </div>
+      )}
+    </div>
   );
 
   if (loading) {
@@ -283,7 +267,7 @@ export default function Texts() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="space-y-6">
                 {publicTexts.map((text) => renderTextCard(text, true))}
               </div>
             )}
