@@ -43,40 +43,55 @@ export type Database = {
       }
       pdfs: {
         Row: {
+          author_name: string | null
+          cover_image_url: string | null
           created_at: string
+          description: string | null
           file_name: string
           file_path: string
           file_size: number | null
           id: string
+          is_public: boolean | null
           processed: boolean | null
           title: string
           updated_at: string
           upload_date: string
           user_id: string
+          view_count: number | null
         }
         Insert: {
+          author_name?: string | null
+          cover_image_url?: string | null
           created_at?: string
+          description?: string | null
           file_name: string
           file_path: string
           file_size?: number | null
           id?: string
+          is_public?: boolean | null
           processed?: boolean | null
           title: string
           updated_at?: string
           upload_date?: string
           user_id: string
+          view_count?: number | null
         }
         Update: {
+          author_name?: string | null
+          cover_image_url?: string | null
           created_at?: string
+          description?: string | null
           file_name?: string
           file_path?: string
           file_size?: number | null
           id?: string
+          is_public?: boolean | null
           processed?: boolean | null
           title?: string
           updated_at?: string
           upload_date?: string
           user_id?: string
+          view_count?: number | null
         }
         Relationships: []
       }
